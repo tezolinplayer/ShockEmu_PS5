@@ -14,30 +14,33 @@ jobs:
     - name: Checkout do código
       uses: actions/checkout@v3
 
-    - name: Compilar com Clang (Objective-C)
+    - name: Tornar o script executável e Rodar
       run: |
-        # Cria o diretório de saída
+        # Dá permissão de execução para o script oficial
+        chmod +x build.sh
+        
+        # Executa o script de build oficial do repositório
+        ./build.sh
+        
+        # Caso o build.sh não crie a pasta bin, criamos para garantir
         mkdir -p bin
         
-        # PROCURA AUTOMATICAMENTE o arquivo ShockEmu.m no repositório
-        # O comando find busca o arquivo e guarda o caminho na variável SRC_FILE
-        SRC_FILE=$(find . -name "ShockEmu.m" | head -n 1)
-        
-        # Verifica se achou o arquivo
-        if [ -z "$SRC_FILE" ]; then
-          echo "ERRO CRÍTICO: O arquivo ShockEmu.m não foi encontrado!"
-          echo "Listando todos os arquivos para ajudar a encontrar:"
-          ls -R
-          exit 1
+        # Se o build.sh falhar ou não gerar o que esperamos,
+        # tentamos compilar manualmente o arquivo correto (iohid_wrap.m)
+        if [ ! -f "iohid_wrap.dylib" ] && [ ! -f "bin/iohid_wrap.dylib" ]; then
+            echo "Build script não gerou o arquivo. Tentando manual..."
+            clang -framework IOKit -framework Foundation -dynamiclib iohid_wrap.m -o bin/iohid_wrap.dylib
         else
-          echo "Arquivo encontrado em: $SRC_FILE"
+            echo "Build parece ter funcionado!"
+            # Move para bin se estiver na raiz, para facilitar o upload
+            [ -f "iohid_wrap.dylib" ] && mv iohid_wrap.dylib bin/
         fi
 
-        # Compila usando o arquivo encontrado
-        clang -framework IOKit -framework Foundation -dynamiclib "$SRC_FILE" -o bin/ShockEmu.dylib
+    - name: Listar arquivos gerados (Debug)
+      run: ls -R bin/
 
-    - name: Upload do Artefato (O arquivo compilado)
+    - name: Upload do Artefato
       uses: actions/upload-artifact@v4
       with:
         name: ShockEmu-MacOS-Binary
-        path: bin/ShockEmu.dylib
+        path: bin/
