@@ -18,13 +18,23 @@ jobs:
       run: |
         # Cria o diretório de saída
         mkdir -p bin
-        # O comando de compilação original adapta-se aqui.
-        # Geralmente requer frameworks do sistema: -framework IOKit -framework Foundation
-        clang -framework IOKit -framework Foundation -dynamiclib ShockEmu.m -o bin/ShockEmu.dylib
         
-        # Se houver um script de build específico (ex: build.sh), use:
-        # chmod +x build.sh
-        # ./build.sh
+        # PROCURA AUTOMATICAMENTE o arquivo ShockEmu.m no repositório
+        # O comando find busca o arquivo e guarda o caminho na variável SRC_FILE
+        SRC_FILE=$(find . -name "ShockEmu.m" | head -n 1)
+        
+        # Verifica se achou o arquivo
+        if [ -z "$SRC_FILE" ]; then
+          echo "ERRO CRÍTICO: O arquivo ShockEmu.m não foi encontrado!"
+          echo "Listando todos os arquivos para ajudar a encontrar:"
+          ls -R
+          exit 1
+        else
+          echo "Arquivo encontrado em: $SRC_FILE"
+        fi
+
+        # Compila usando o arquivo encontrado
+        clang -framework IOKit -framework Foundation -dynamiclib "$SRC_FILE" -o bin/ShockEmu.dylib
 
     - name: Upload do Artefato (O arquivo compilado)
       uses: actions/upload-artifact@v4
