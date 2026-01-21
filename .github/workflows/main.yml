@@ -1,0 +1,33 @@
+name: Build ShockEmu (MacOS)
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+    - name: Checkout do código
+      uses: actions/checkout@v3
+
+    - name: Compilar com Clang (Objective-C)
+      run: |
+        # Cria o diretório de saída
+        mkdir -p bin
+        # O comando de compilação original adapta-se aqui.
+        # Geralmente requer frameworks do sistema: -framework IOKit -framework Foundation
+        clang -framework IOKit -framework Foundation -dynamiclib ShockEmu.m -o bin/ShockEmu.dylib
+        
+        # Se houver um script de build específico (ex: build.sh), use:
+        # chmod +x build.sh
+        # ./build.sh
+
+    - name: Upload do Artefato (O arquivo compilado)
+      uses: actions/upload-artifact@v4
+      with:
+        name: ShockEmu-MacOS-Binary
+        path: bin/ShockEmu.dylib
